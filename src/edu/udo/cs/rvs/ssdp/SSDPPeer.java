@@ -7,6 +7,7 @@ package edu.udo.cs.rvs.ssdp;
  */
 public class SSDPPeer
 {
+	// this is ana eddit to my message 
 	public SSDPPeer()
 	{
 
