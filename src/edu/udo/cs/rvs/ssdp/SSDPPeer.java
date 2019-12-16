@@ -1,11 +1,12 @@
 package edu.udo.cs.rvs.ssdp;
 
 import javax.xml.crypto.Data;
-import java.io.IOException;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 
 /**
@@ -34,7 +35,7 @@ public class SSDPPeer {
 				InetAddress inetAddress = InetAddress.getByName("239.255.255.250");
 				multicastSocket.joinGroup(inetAddress);
 
-				while (!Exit) {
+				while (Exit) {
 					DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length);
 					multicastSocket.receive(datagramPacket);
 					datagramList.add(datagramPacket);
@@ -65,13 +66,15 @@ public class SSDPPeer {
 	}
 
 
-	private class TheWorkerThread implements Runnable {
+	private static class TheWorkerThread implements Runnable {
+		static final TheWorkerThread instance = new TheWorkerThread();
+		BufferedReader reader;
 
 		@Override
 		public void run() {
 			while (Exit) {
 				byte[] buffer = new byte[1024];
-				DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length);
+				DatagramPacket datagramPacket;
 				/**
 				 * init the received datagramPacket
 				 */
@@ -82,10 +85,66 @@ public class SSDPPeer {
 						e.printStackTrace();
 					}
 				}
-
+				//TODO do not forgot to change the Datagramminit trace() !!
+				InputStream in = new ByteArrayInputStream(datagramPacket.getData());
+				InputStreamReader inputStream = new InputStreamReader(in, StandardCharsets.UTF_8);
+				reader = new BufferedReader(inputStream);
+               //TODO we should add a methode to read the buffer , add the UUID , DienstTYPE , for the unicast it's found
+				//TODO on the USN and ST , for multicast it's found on the USN and NT ,,, alive or dead on the last line for multicast
+				// TODO add a List to store the UUID and Dienst-Type
 			}
 		}
 
+		BufferedReader getBuffer() {
+			return reader;
+		}
+
+		/**
+		 * init singeltone
+		 *
+		 * @return the instance of the excuted thread
+		 */
+		public static TheWorkerThread getInstance() {
+			return instance;
+		}
 
 	}
+
+	private static class theUserThread implements Runnable {
+		String input;
+
+		@Override
+		public void run() {
+			while (Exit) {
+				BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+				try {
+					input = bufferedReader.readLine();
+				} catch (IOException e) {
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException ex) {
+						ex.printStackTrace();
+					}
+					continue;
+				}
+				if (input.equals("EXIT")) {
+					Exit = false;
+					break;
+				}
+				if (input.equals("CLEAR")) {
+
+				}
+				if (input.equals("LIST")) {
+
+				}
+				if (input.equals("SCAN")) {
+
+				}
+
+
+			}
+		}
+	}
 }
+
+
