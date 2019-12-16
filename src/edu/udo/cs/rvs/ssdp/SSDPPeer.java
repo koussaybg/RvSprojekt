@@ -66,10 +66,16 @@ public class SSDPPeer {
 
 	}
 
-
 	private static class TheWorkerThread implements Runnable {
 		static final TheWorkerThread instance = new TheWorkerThread();
 		BufferedReader reader;
+
+        /**
+         * Methode uded to Read the DatagramPacket , store it or Delete it if the device is dead
+         * @param rd the Reader
+         * @param devices List of devices to store or to to delete from it
+         * @throws IOException if an error in buffer occur
+         */
         void Read_store_Delete(Reader rd , LinkedList<Device> devices) throws IOException {
         	boolean alive=true ;
 			String buffer;
@@ -196,6 +202,10 @@ public class SSDPPeer {
 			}
 		}
 
+        /**
+         * Methode used to Print all device Type and their UUID
+         * @param alivelist the list of all alive List
+         */
 		private void Print_Devices(List<Device> alivelist) {
 			for (Device dv : alivelist) {
 			 System.out.printf("%s - %s\n",dv.getUuid(),dv.getDevices());
@@ -204,6 +214,9 @@ public class SSDPPeer {
 		}
 	}
 
+    /**
+     * a private class to manage a new Data type named "device"
+     */
 	private static class Device  {
 		String uuid  ;
 		String devices  ;
@@ -224,6 +237,12 @@ public class SSDPPeer {
 		public String getDevices() {
 			return devices;
 		}
+
+        /**
+         * an equal method
+         * @param obj
+         * @return
+         */
 		public boolean equals(Device obj) {
 			return (this.getDevices().equals(obj.getDevices())&&this.getUuid().equals(obj.getUuid())) ;
 		}
