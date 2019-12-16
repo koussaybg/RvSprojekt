@@ -1,13 +1,14 @@
 package edu.udo.cs.rvs.ssdp;
 
-import javax.xml.crypto.Data;
+
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * This class is first instantiated on program launch and IF (and only if) it
@@ -69,7 +70,40 @@ public class SSDPPeer {
 	private static class TheWorkerThread implements Runnable {
 		static final TheWorkerThread instance = new TheWorkerThread();
 		BufferedReader reader;
-
+        void Read_store_Delete(Reader rd , LinkedList<Device> devices) throws IOException {
+        	boolean alive=true ;
+			String buffer;
+			String[] memory;
+			BufferedReader in = new BufferedReader(rd);
+			Device device = new Device();
+			while ((buffer = in.readLine()) != null)
+			{
+				memory = buffer.split(":", 2);
+				if (memory[0].equals("ST") || memory[0].equals("NT")) {
+					device.addDevices(memory[1]);
+					continue;
+				}
+				if (memory[0].equals("USN")) {
+					memory = memory[1].split(":");
+					device.setUuid(memory[1]);
+				}
+				if (memory[0].equals("NTS")) {
+					if (memory[1].equals("„ssdp:byebye")) {
+						for (Device dv : devices) {
+							if (dv.equals(device)) {
+								devices.remove(dv);
+								alive=false ;
+							}
+						}
+					}
+				}
+			}
+			if(alive)
+			{
+				devices.add(device) ;
+			}
+		}
+		LinkedList<Device> AliveDevices = new LinkedList<>() ;
 		@Override
 		public void run() {
 			while (Exit) {
@@ -85,14 +119,25 @@ public class SSDPPeer {
 						e.printStackTrace();
 					}
 				}
-				//TODO do not forgot to change the Datagramminit trace() !!
 				InputStream in = new ByteArrayInputStream(datagramPacket.getData());
 				InputStreamReader inputStream = new InputStreamReader(in, StandardCharsets.UTF_8);
 				reader = new BufferedReader(inputStream);
-               //TODO we should add a methode to read the buffer , add the UUID , DienstTYPE , for the unicast it's found
+				try {
+					Read_store_Delete(reader, AliveDevices) ;
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+
+				//TODO we should add a methode to read the buffer , add the UUID , DienstTYPE , for the unicast it's found
 				//TODO on the USN and ST , for multicast it's found on the USN and NT ,,, alive or dead on the last line for multicast
 				// TODO add a List to store the UUID and Dienst-Type
 			}
+
+		}
+
+		public LinkedList<Device> getAliveDevices() {
+			return AliveDevices;
 		}
 
 		BufferedReader getBuffer() {
@@ -116,6 +161,8 @@ public class SSDPPeer {
 		@Override
 		public void run() {
 			while (Exit) {
+				List<Device> alivelist ;
+				alivelist =TheWorkerThread.getInstance().getAliveDevices() ;
 				BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 				try {
 					input = bufferedReader.readLine();
@@ -132,17 +179,53 @@ public class SSDPPeer {
 					break;
 				}
 				if (input.equals("CLEAR")) {
-
+					TheWorkerThread.getInstance().getAliveDevices().clear();
+					System.out.println(" Devices Cleared successfully");
 				}
 				if (input.equals("LIST")) {
+					Print_Devices(alivelist)  ;
 
 				}
 				if (input.equals("SCAN")) {
+					//TODO READ IT AGAIN !! NO IDEA WHAT HE MEAN
+
 
 				}
 
 
 			}
+		}
+
+		private void Print_Devices(List<Device> alivelist) {
+			for (Device dv : alivelist) {
+			 System.out.printf("%s - %s\n",dv.getUuid(),dv.getDevices());
+			}
+
+		}
+	}
+
+	private static class Device  {
+		String uuid  ;
+		String devices  ;
+		Device() { } ;
+
+		 void addDevices(String device) {
+			this.devices=device ;
+		}
+
+		 void setUuid(String uui) {
+			this.uuid = uui;
+		}
+
+		public String getUuid() {
+			return uuid;
+		}
+
+		public String getDevices() {
+			return devices;
+		}
+		public boolean equals(Device obj) {
+			return (this.getDevices().equals(obj.getDevices())&&this.getUuid().equals(obj.getUuid())) ;
 		}
 	}
 }
