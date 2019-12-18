@@ -5,9 +5,12 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.UnknownHostException;
+import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -18,12 +21,22 @@ import java.util.UUID;
 public class SSDPPeer {
 	//test
 	static boolean Exit = true;
+	TheListThread h=new TheListThread() ;
+	public SSDPPeer( )
+	{
+		TheListThread h=new TheListThread() ;
+		Thread r=new Thread(h) ;
+		r.start();
 
-	public SSDPPeer() {
 	}
 
 
+
+
 	private static class TheListThread implements Runnable {
+		private TheListThread() {
+
+		}
 		static final TheListThread instance = new TheListThread();
 
 		LinkedList<DatagramPacket> datagramList = new LinkedList<>();
@@ -193,8 +206,27 @@ public class SSDPPeer {
 
 				}
 				if (input.equals("SCAN")) {
-					//TODO READ IT AGAIN !! NO IDEA WHAT HE MEAN
-
+					final int host =1900 ;
+					String stringBuilder = "M-SEARCH * HTTP/1.1\n\r" +
+							String.format("S: uuid:%s\n\r", UUID.randomUUID().toString()) +
+							String.format("HOST: %d\n\r", host) +
+							"MAN: \"ssdp:discover\" \n\r" +
+							"ST: ssdp:all \n\r";
+					byte[] bytes= stringBuilder.getBytes() ;
+					InetAddress inetAddress= null;
+					try {
+						inetAddress = InetAddress.getByName("239.255.255.250");
+					} catch (UnknownHostException e) {
+						e.printStackTrace();
+					}
+					DatagramPacket datagramPacket=new DatagramPacket(bytes ,bytes.length,inetAddress,1900) ;
+					try {
+						MulticastSocket multicastSocket = new MulticastSocket();
+						multicastSocket.send(datagramPacket);
+					} catch (IOException e) {
+						e.printStackTrace();
+ 					}
+                //TODO add the output of the system
 
 				}
 
